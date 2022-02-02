@@ -16,12 +16,13 @@ const twitterClient = new TwitterClient({
 });
 
 async function setName () {
-	let followers = await twitterClient.accountsAndUsers.followersList({});
-	let name = await twitterClient.accountsAndUsers.accountSettings()
-	let oldName = name.split("-")[0]
-	followers = followers.length
+	let details = await twitterClient.accountsAndUsers.accountUpdateProfile({})
+  let name = details.name;
+  console.log(name)
+	let oldName = name.split("with")[0].trim()
+	let followers = details.followers_count
 	// Convert numbers to emoji:
-	let newName = `${oldName}- ${Numbers.toEmoji(followers)}`
+	let newName = `${oldName} with ${Numbers.toEmoji(followers)} others`
 	let updateName = await twitterClient.accountsAndUsers.accountUpdateProfile({name: newName})
 }
 
@@ -41,8 +42,8 @@ async function get_followers() {
       ).then(() => {
         const follower_avatar = {
           input: `${follower.screen_name}.png`,
-          top: 380,
-          left: parseInt(`${1050 + 120 * index}`),
+          top: parseInt(`${146 + 201 * index}`),
+          left: 2762,
         };
         image_data.push(follower_avatar);
         count++;
@@ -64,11 +65,11 @@ async function process_image(url, image_path) {
     (response) =>
       new Promise(async (resolve, reject) => {
         const rounded_corners = new Buffer.from(
-          '<svg><rect x="0" y="0" width="100" height="100" rx="50" ry="50"/></svg>'
+          '<svg><rect x="0" y="0" width="150" height="150" rx="100" ry="100"/></svg>'
         );
         resolve(
           sharp(response.data)
-            .resize(100, 100)
+            .resize(150, 150)
             .composite([
               {
                 input: rounded_corners,
@@ -89,8 +90,9 @@ async function create_text(width, height, text) {
     <style>
     .text {
       font-size: 64px;
-      fill: #000;
+      fill: #fff;
       font-weight: 700;
+      font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
     </style>
     <text x="50%" y="50%" text-anchor="middle" class="text">${text}</text>
@@ -106,19 +108,20 @@ async function create_text(width, height, text) {
 async function draw_image(image_data) {
   try {
     const hour = new Date().getHours();
-    const welcomeTypes = ["Morning", "Afternoon", "Evening"];
+    const welcomeTypes = ["Good Morning!", "Good Afternoon!", "Good Evening!", "Still awake?"];
     let welcomeText = "";
 
     if (hour < 12) welcomeText = welcomeTypes[0];
     else if (hour < 18) welcomeText = welcomeTypes[1];
-    else welcomeText = welcomeTypes[2];
+    else if (hour < 21) welcomeText = welcomeTypes[2];
+    else welcomeText = welcomeTypes[3];
 
-    const svg_greeting = await create_text(540, 100, welcomeText);
+    const svg_greeting = await create_text(512, 88, welcomeText);
 
     image_data.push({
       input: svg_greeting,
-      top: 52,
-      left: 220,
+      top: 188,
+      left: 2162,
     });
 
     await sharp("twitter-banner.png")
@@ -163,10 +166,15 @@ async function delete_files(files) {
 }
 
 get_followers();
+setName().catch(err => {
+  console.log(err)
+})
 setInterval(() => {
   get_followers();
-  setName();
-}, 60000);
+  setName().catch(err => {
+    console.log(err)
+  })
+}, 20000);
 
 http
   .createServer(function (req, res) {
