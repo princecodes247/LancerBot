@@ -170,11 +170,14 @@ setName().catch(err => {
   console.log(err)
 })
 setInterval(() => {
-  get_followers();
   setName().catch(err => {
     console.log(err)
   })
-}, 20000);
+}, 10000);
+setInterval(() => {
+  get_followers();
+
+}, 61000);
 
 http
   .createServer(function (req, res) {
